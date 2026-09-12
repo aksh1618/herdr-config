@@ -1,0 +1,3 @@
+[submodule "plugins/herdr-recent-navigator"]
+	path = plugins/herdr-recent-navigator
+	url = https://github.com/aksh1618/herdr-recent-navigator

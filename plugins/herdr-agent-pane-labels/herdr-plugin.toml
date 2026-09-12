@@ -1,0 +1,35 @@
+id = "aksh1618.herdr-agent-pane-labels"
+name = "Herdr Agent Pane Labels"
+version = "0.1.0"
+description = "Label agent panes with the agent's session name, so it shows on the pane border."
+min_herdr_version = "0.7.4"
+platforms = ["macos", "linux"]
+
+# No [[build]] — the sweep is a self-contained python3 script, nothing to compile.
+
+# Herdr passes event handlers no payload (see recent-navigator's `track`, which
+# re-queries state), so each trigger runs the same full sweep over `pane list`.
+# The agent events cover session renames; pane.focused is what covers shell panes,
+# which generate no agent events at all. A title that changes while a pane stays
+# focused (launching vim in the pane you're already in) lands on the next focus
+# change rather than immediately — herdr has no pane.title_changed event to use.
+[[events]]
+on = "pane.agent_detected"
+command = ["./sync-pane-labels.py"]
+
+[[events]]
+on = "pane.agent_status_changed"
+command = ["./sync-pane-labels.py"]
+
+[[events]]
+on = "pane.focused"
+command = ["./sync-pane-labels.py"]
+
+# Manual trigger, mostly for testing:
+#   herdr plugin action invoke aksh1618.herdr-agent-pane-labels.sync
+[[actions]]
+id = "sync"
+title = "Sync Agent Pane Labels"
+description = "Re-apply session names to all agent pane labels now"
+contexts = ["global", "workspace"]
+command = ["./sync-pane-labels.py"]

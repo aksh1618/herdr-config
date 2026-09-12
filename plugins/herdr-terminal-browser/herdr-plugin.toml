@@ -1,0 +1,25 @@
+id = "aksh1618.terminal-browser"
+name = "Terminal Browser"
+version = "0.1.0"
+description = "Open ctrl-clicked web links in a terminal browser pane instead of the desktop browser"
+min_herdr_version = "0.7.5"
+platforms = ["linux", "macos"]
+
+[[actions]]
+id = "open-link"
+title = "Open link in terminal browser"
+description = "Split a terminal browser pane for the ctrl-clicked URL"
+contexts = ["pane"]
+command = ["./open-link.sh"]
+
+[[panes]]
+id = "browser"
+title = "web"
+placement = "split"
+command = ["./browse.sh"]
+
+[[link_handlers]]
+id = "http"
+title = "Open in terminal browser"
+pattern = "^https?://"
+action = "open-link"

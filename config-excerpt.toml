@@ -1,0 +1,237 @@
+# An excerpt of my ~/.config/herdr/config.toml — the parts that wire up the plugins and
+# scripts in this repo, plus the settings they depend on. My per-workspace colour rules
+# are stripped out (they were just `{ equals = "<project>", fg = "#…" }` entries under the
+# `workspace` token in both sidebar panels); everything else is verbatim.
+
+onboarding = false
+
+[experimental]
+pane_history = true
+
+# Render Kitty graphics from panes through to the host terminal (images in pane apps —
+# previews, plots, chafa). Off by default; also gates the pane-graphics API, which
+# otherwise answers "pane graphics require experimental.kitty_graphics".
+# scripts/herdr-split-auto.sh needs it: pane.graphics.info is the only place the API
+# exposes the cell size in pixels.
+kitty_graphics = true
+
+
+[ui]
+# Off: every pane now carries an explicit label instead, written by the
+# herdr-agent-pane-labels plugin (agent session name, foreground process, or the
+# shell name). herdr's built-in agent label renders only on the border; a real
+# label is data any plugin can read — recent-navigator's PaneInfo deserializes
+# `label`, and its `title` field never populates (herdr emits terminal_title),
+# so an explicit label is the only pane name plugins actually see.
+show_agent_labels_on_pane_borders = false
+agent_panel_sort = "priority"
+
+# Share divider borders between adjacent panes instead of each pane drawing its
+# own full box. With the default (true), a split costs two divider lines — 2 rows
+# for a horizontal split, 2 columns for a vertical one. Cells are ~2x taller than
+# wide, so the horizontal gap read as far chunkier than the vertical one; sharing
+# the divider makes both a single line.
+pane_gaps = false
+
+# The tab-bar status area (0.8.2+). Every `command` segment costs a fixed ~120 ms
+# `/bin/sh -lc` login shell regardless of what it runs, so everything herdr can answer
+# for itself is aggregated into one script rather than split across segments.
+# llm-quota is FunnyQ/herdr-tab-bar-llm-quota, built from source and symlinked onto PATH.
+tab_bar_right = [
+    { type = "zoom" },
+    { type = "command", command = "~/.config/herdr/scripts/herdr-status.sh agents space", interval_seconds = 5, timeout_seconds = 3 },
+    { type = "command", command = "~/aksh_scripts/global/llm-quota", interval_seconds = 60, timeout_seconds = 5 },
+    { type = "datetime", format = "%Y-%m-%d %H:%M" },
+]
+tab_bar_right_separator = " · "
+
+window_title = "{workspace} · {tab} · {terminal_title}"
+
+[ui.toast]
+delivery = "terminal"
+
+# Agent rows: session name (terminal title — set by /rename or auto-summary) on the first
+# row, workspace·tab on the second.
+# Per-token base styles differ by token kind (herdr's sidebar.rs): `workspace` inherits a
+# BOLD, non-DIM base; `tab`/`terminal_title` inherit a DIM `overlay0` base. apply_token_style
+# only patches the fields set here, so to make two tokens match you have to equalize `dim`
+# too — a matching `fg` alone leaves one DIM and one not. Row 1: bright session name
+# (dim off). Row 2: workspace + tab identical dull grey (same fg, both DIM, no bold).
+[ui.sidebar.agents]
+rows = [
+    [
+        "state_icon",
+        { token = "terminal_title_stripped", fg = "#c0caf5", dim = false },
+    ],
+    [
+        # `rules = [ { equals = "<workspace>", fg = "#…" }, … ]` goes here, one entry per
+        # project, so each one keeps a consistent colour across both sidebar panels.
+        { token = "workspace", fg = "#565f89", bold = true, dim = true },
+        { token = "tab", fg = "#565f89", dim = true },
+    ],
+]
+
+# Spaces (workspace list) rows. Default is
+# [["state_icon", "workspace"], ["branch", "git_status"]]; both git tokens are dropped —
+# the branch name and the ahead/behind counts (git_status) — leaving just the state
+# icon and workspace name on a single row. row_gap = 1 restores the blank line between
+# space entries that the default two-row layout provided (collapsing to one row removed it).
+[ui.sidebar.spaces]
+row_gap = 1
+rows = [
+    [
+        "state_icon",
+        # same per-workspace `rules` as above
+        { token = "workspace" },
+    ],
+]
+
+[theme]
+name = "tokyo-night"
+auto_switch = false
+
+# ── plugin actions ───────────────────────────────────────────────────────────────────
+# These resolve only once the plugin is installed or linked; herdr keeps an unresolvable
+# binding quiet rather than failing the config.
+
+[[keys.command]]
+key = "prefix+tab"
+type = "plugin_action"
+command = "beyondlex.herdr-recent-navigator.cycle-panes"
+description = "Cycle panes (MRU, alt-tab style)"
+
+[[keys.command]]
+key = "prefix+u"
+type = "plugin_action"
+command = "beyondlex.herdr-recent-navigator.open"
+description = "Recent navigator (last category)"
+
+[[keys.command]]
+key = "prefix+i"
+type = "plugin_action"
+command = "beyondlex.herdr-recent-navigator.focus-panes"
+description = "Recent panes (MRU)"
+
+[[keys.command]]
+key = "prefix+w"
+type = "plugin_action"
+command = "beyondlex.herdr-recent-navigator.focus-workspaces"
+description = "Recent navigator (Workspaces tab)"
+
+# Annotate the focused pane's thread in nvim (quote-reply), in the pane's own layout slot.
+# plugins/herdr-annotate-thread: herdr has no pane-local placement, so the plugin pane opens
+# in a temporary tab and is moved into the target's slot while the target is parked; a
+# copy-mode selection made before pressing the key arrives pre-quoted.
+[[keys.command]]
+key = "prefix+a"
+type = "plugin_action"
+command = "aksh1618.annotate-thread.open"
+description = "Annotate thread in nvim (quote-reply)"
+
+# ── scripts ──────────────────────────────────────────────────────────────────────────
+
+# Move a pane to another tab. Herdr has no built-in binding for this — swap_pane_*
+# only reaches within the current tab — so drive `herdr pane move` from an fzf popup.
+[[keys.command]]
+key = "prefix+m"
+type = "popup"
+command = "~/.config/herdr/scripts/herdr-move-pane.sh"
+description = "Move a pane to another tab"
+width = "85%"
+height = "60%"
+
+# Flip the split between the focused pane and whatever sits on the other side of it —
+# the divider you are looking at, at any depth. Herdr has no transpose action: bindable
+# pane actions stop at swap_pane_* (which reorders panes, never the split axis), and the
+# socket API's only relocation primitive, pane.move, explicitly no-ops for same-tab moves.
+# So the script parks the panes under that split in a throwaway tab and re-inserts them
+# top-down with the one direction flipped — processes, scrollback, labels, pane order and
+# every ratio survive. layout.apply is NOT usable here: it recreates the tab's panes from
+# scratch and would kill their processes.
+#
+# A single-pane sibling costs 2 moves, a whole block 2x(k-1). Any refused move rolls the
+# original layout back, and an flock keeps two fast presses from interleaving.
+#
+# prefix+/ is unbound in herdr's defaults, and the slash reads as a tilted divider. With no
+# parent split (a pane alone in its tab) or a zoomed tab it focuses right instead of
+# erroring.
+[[keys.command]]
+key = "prefix+/"
+type = "shell"
+command = "~/.config/herdr/scripts/herdr-flip-split.sh"
+description = "Flip the split around this pane (else focus right)"
+
+# Split the focused pane along its bigger dimension, so the common case needs one key
+# instead of choosing between prefix+v and prefix+minus. Herdr's own split is
+# direction-only (split_vertical / split_horizontal; SplitDirection has just right/down,
+# no auto), so the rule lives in the script: the bigger dimension in *pixels*. Pane rects
+# are in cells and cells are not square (10x22 px here), so the cell size is read from
+# pane.graphics.info — the only place the API exposes it, gated on
+# experimental.kitty_graphics above, with a 10x22 fallback if that call ever fails.
+# No --cwd is passed, so the new pane follows terminal.new_cwd like the built-in splits.
+#
+# prefix+enter is free: Enter is reserved only as a *direct* key for sidebar navigation
+# (reserve_navigate_runtime_keys), which is a separate table from prefix bindings.
+[[keys.command]]
+key = "prefix+enter"
+type = "shell"
+command = "~/.config/herdr/scripts/herdr-split-auto.sh"
+description = "Split the pane (auto direction)"
+
+# Review in revdiff beside the focused pane. The review pane pastes its own annotations
+# into that pane's composer when it exits, unsubmitted — same launcher the herdr-review
+# skill drives, through --send-to, so nothing waits and nothing can orphan the pane.
+# `shell` runs with no UI of its own; `popup` gives the file picker somewhere to draw.
+[[keys.command]]
+key = "prefix+d"
+type = "shell"
+command = "~/.config/herdr/scripts/herdr-review-pane.sh diff"
+description = "Review uncommitted changes (revdiff)"
+
+[[keys.command]]
+key = "prefix+f"
+type = "popup"
+command = "~/.config/herdr/scripts/herdr-review-pane.sh file"
+description = "Review a file (revdiff)"
+width = "80%"
+height = "70%"
+
+# How herdr resolves a key claimed twice (src/config/keybinds.rs): user bindings register
+# before defaults, and a default that collides with one is dropped silently — no
+# diagnostic. Every [[keys.command]] above counts as a user binding, so each one already
+# beats herdr's default for that key without anything here. What a command does NOT beat
+# is a field set explicitly in this table: that's user-vs-user, the [keys] fields register
+# first, and the loser is reported as
+# "prefix+X: kept keys.<field>, disabled keys.command[N].key".
+#
+# So the pairs below are the ones that matter — and note the trap, which is that setting a
+# field to keep a default is what *creates* a conflict with your own command bindings.
+[keys]
+# Tabs: cycle with prefix+n / prefix+p (herdr defaults).
+next_tab = "prefix+n"
+previous_tab = "prefix+p"
+
+# Belt and braces: prefix+tab reaches the navigator action above either way, since an
+# unset default yields to it.
+cycle_pane_next = ""
+cycle_pane_previous = ""
+
+# Last pane: toggle back to the previously-focused pane (global, across tabs/workspaces).
+# Mnemonic for neovim's <leader><leader> alternate-buffer. Unbound by default.
+last_pane = "prefix+space"
+
+# Agents: focus rows 1-9 with prefix+1..9.
+# (Plain digits only — this terminal doesn't transmit modified digits like shift+/alt+1..9,
+#  so all numbered switching lives on this one prefix+digit row.)
+focus_agent = "prefix+1..9"
+
+# Indexed tab-jump disabled so it doesn't collide with focus_agent on prefix+1..9. This
+# one is load-bearing: both fields are set explicitly, so without the unset they'd be a
+# user-vs-user conflict over the same digit row.
+switch_tab = ""
+
+[advanced]
+# Per-pane terminal scrollback budget, in bytes (held in memory; ghostty prunes only when
+# exceeded). Default is 10000000 (~10 MB). Raised to ~1 GB so scrollback is effectively
+# unlimited for normal use while keeping a safe memory ceiling.
+scrollback_limit_bytes = 1000000000
