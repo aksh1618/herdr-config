@@ -1,3 +1,6 @@
 [submodule "plugins/herdr-recent-navigator"]
 	path = plugins/herdr-recent-navigator
 	url = https://github.com/aksh1618/herdr-recent-navigator
+[submodule "plugins/herdr-vimnotate"]
+	path = plugins/herdr-vimnotate
+	url = https://github.com/aksh1618/herdr-vimnotate

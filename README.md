@@ -4,19 +4,23 @@ The plugins, scripts and agent skill I've built for my [herdr](https://herdr.dev
 
 These are extremely fine-tuned to my workflows and aren't maintained as published plugins. This is a snapshot copied out of a private dotfiles repo, not the live config, so there's no history here. It's here to be read, and to be stolen from.
 
-![prefix+a opens the focused pane's thread in neovim, in that pane's own layout slot](docs/annotate.gif)
+[![prefix+a opens the focused pane's thread in neovim, in that pane's own layout slot, to annotate it with vim motions](https://raw.githubusercontent.com/aksh1618/herdr-vimnotate/main/docs/vimnotate-demo.webp)](https://github.com/user-attachments/assets/83c63ee7-5f94-4757-9a08-98532e6a04fd)
 
-Above: `prefix+a` on a pane running an agent. The thread opens in neovim **in that pane's own slot** — the shell below it never moves — two passages get quoted and answered, and `q` puts the reply in the agent's composer unsubmitted.
+Above: `prefix+a` on a pane running an agent. The thread opens in neovim **in that pane's own slot** — the shell below it never moves — paragraphs get marked with vim motions (`p` looks good, `d` delete, `c` comment, `.` to repeat), and `q` puts the review in the agent's composer unsubmitted.
 
-All of it is developed and run against **herdr 0.9**, but each plugin declares its own floor: `annotate-thread` needs 0.9.0 for the pane-move flags its placement depends on, while `agent-pane-labels`, `terminal-browser` and `recent-navigator` set 0.7.4 or 0.7.5.
+All of it is developed and run against **herdr 0.9**, but each plugin declares its own floor: `vimnotate` is built and tested on 0.9.0, while `agent-pane-labels`, `terminal-browser` and `recent-navigator` set 0.7.4 or 0.7.5.
 
 ## Plugins
 
-### `herdr-annotate-thread`
+### `herdr-vimnotate`
 
-`prefix+a` opens the focused pane's thread in a neovim buffer, **in that pane's own layout slot**, so I can quote-reply to an agent with vim motions and send the whole batch back as one unsubmitted message. It's meant to feel like a built-in mode the way herdr's copy mode does, press the key and the pane appears to stay exactly where it was, same size, same content, same place in the layout, except now it takes vim motions.
+`prefix+a` opens the focused pane's thread in neovim, **in that pane's own layout slot**, so I can review an agent's reply with vim motions — `cap` to comment on a paragraph, `dap` to strike one, `pp` for "looks good", `.` to repeat, `u` to undo — and send the whole review back as one unsubmitted message. It's meant to feel like a built-in mode the way herdr's copy mode does, press the key and the pane appears to stay exactly where it was, same size, same content, same place in the layout, except now it takes vim motions. Annotations show as coloured highlights with inline boxes (or a side rail), there's a general note on `Tab`, and the ones I've sent come back dimmed the next time I open the same pane.
 
-herdr has no pane-local placement for a plugin pane (`popup` is centred, `overlay` is a zoomed split), so the slot is taken by capturing the pane's contents first, opening the plugin pane in a temporary tab, moving it into the target's slot, then parking the target in a tab of its own. Reversed on exit, with nothing recreated. The details that actually make it seamless, such as why the capture has to happen before the split, why a `pane move` needs a no-op resize after it, and why that resize has to be issued from inside the alternate screen, are in [its README](plugins/herdr-annotate-thread/README.md).
+herdr has no pane-local placement for a plugin pane (`popup` is centred, `overlay` is a zoomed split), so the slot is taken by capturing the pane's contents first, opening the plugin pane in a temporary tab, moving it into the target's slot, then parking the target in a tab of its own. Reversed on exit, with nothing recreated. The details that actually make it seamless, such as why the capture has to happen before the split, why a `pane move` needs a no-op resize after it, and why that resize has to be issued from inside the alternate screen, are in [its README](https://github.com/aksh1618/herdr-vimnotate#readme), along with the keys, the settings and how to run its tests.
+
+Unlike the rest of this repo it's maintained as a plugin, so it lives in [its own repo](https://github.com/aksh1618/herdr-vimnotate) and is a submodule here, at `plugins/herdr-vimnotate`. Install it from there: `herdr plugin install aksh1618/herdr-vimnotate`.
+
+It used to be `herdr-annotate-thread` (`aksh1618.annotate-thread`) in this repo. The id changed with the rename, so if you installed that, uninstall it and install the new repo instead.
 
 ### `herdr-terminal-browser`
 
@@ -56,17 +60,16 @@ The parts of my `config.toml` that wire the above up, plus the settings they dep
 
 ## Installing any of this
 
-herdr 0.9 takes a subdirectory, so the plugins are directly installable:
+herdr 0.9 takes a subdirectory, so the plugins are directly installable (vimnotate and recent-navigator from their own repos, as above):
 
 ```sh
-herdr plugin install aksh1618/herdr-config/plugins/herdr-annotate-thread
 herdr plugin install aksh1618/herdr-config/plugins/herdr-terminal-browser
 herdr plugin install aksh1618/herdr-config/plugins/herdr-agent-pane-labels
 ```
 
 That works, but read the second paragraph again — this is a snapshot of a live personal config, and it carries no tags, so pin a commit SHA with `--ref` if you do it. `herdr plugin link <path>` from a clone is the better way to pick one apart.
 
-Dependencies, beyond `jq` which everything uses: `python3` for the pane-labels sweep; `fzf` and `column` for the pane mover; `flock` for the split flipper; `socat` and `nvim` for the annotate plugin; `revdiff` for the review script and the skill. The browser plugin needs no particular browser — it falls back through `terminal-browser`, `w3m`, `elinks`, `lynx`, `links`, `cha` and `browsh`, taking the first on `PATH`.
+Dependencies, beyond `jq` which everything uses: `python3` for the pane-labels sweep; `fzf` and `column` for the pane mover; `flock` for the split flipper; `revdiff` for the review script and the skill. The browser plugin needs no particular browser — it falls back through `terminal-browser`, `w3m`, `elinks`, `lynx`, `links`, `cha` and `browsh`, taking the first on `PATH`.
 
 ## Not here
 

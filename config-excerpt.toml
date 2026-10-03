@@ -118,15 +118,15 @@ type = "plugin_action"
 command = "beyondlex.herdr-recent-navigator.focus-workspaces"
 description = "Recent navigator (Workspaces tab)"
 
-# Annotate the focused pane's thread in nvim (quote-reply), in the pane's own layout slot.
-# plugins/herdr-annotate-thread: herdr has no pane-local placement, so the plugin pane opens
-# in a temporary tab and is moved into the target's slot while the target is parked; a
-# copy-mode selection made before pressing the key arrives pre-quoted.
+# Annotate the focused pane's thread in nvim with vim operators, in the pane's own layout slot.
+# aksh1618/herdr-vimnotate: herdr has no pane-local placement, so the plugin pane opens in a
+# temporary tab and is moved into the target's slot while the target is parked; a copy-mode
+# selection made before pressing the key opens the comment popup on that text.
 [[keys.command]]
 key = "prefix+a"
 type = "plugin_action"
-command = "aksh1618.annotate-thread.open"
-description = "Annotate thread in nvim (quote-reply)"
+command = "aksh1618.vimnotate.open"
+description = "Vimnotate: annotate thread in nvim"
 
 # ── scripts ──────────────────────────────────────────────────────────────────────────
 
