@@ -4,7 +4,7 @@ The plugins, scripts and agent skill I've built for my [herdr](https://herdr.dev
 
 These are extremely fine-tuned to my workflows and aren't maintained as published plugins. This is a snapshot copied out of a private dotfiles repo, not the live config, so there's no history here. It's here to be read, and to be stolen from.
 
-[![prefix+a opens the focused pane's thread in neovim, in that pane's own layout slot, to annotate it with vim motions](https://raw.githubusercontent.com/aksh1618/herdr-vimnotate/main/docs/vimnotate-demo.webp)](https://github.com/user-attachments/assets/83c63ee7-5f94-4757-9a08-98532e6a04fd)
+[![prefix+a opens the focused pane's thread in neovim, in that pane's own layout slot, to annotate it with vim motions](https://raw.githubusercontent.com/aksh1618/herdr-vimnotate/main/docs/vimnotate-demo.webp)](https://github.com/user-attachments/assets/6ffeb5cf-e4a9-4b0c-bb55-fe7a231a98a9)
 
 Above: `prefix+a` on a pane running an agent. The thread opens in neovim **in that pane's own slot** — the shell below it never moves — paragraphs get marked with vim motions (`p` looks good, `d` delete, `c` comment, `.` to repeat), and `q` puts the review in the agent's composer unsubmitted.
 
